@@ -31,11 +31,11 @@ RUN cmake .. \
 RUN make -j `grep processor /proc/cpuinfo | wc -l` && make install
 
 FROM almalinux:8
+RUN groupadd -r mysql && useradd -r -g mysql mysql
 RUN mkdir -p /var/run/mysqld /etc/mysql /var/lib/mysql /usr/local/mysql && \
     chown -R mysql:mysql /var/lib/mysql /var/run/mysqld /etc/mysql /usr/local/mysql && \ 
     chmod 1777 /var/run/mysqld /var/lib/mysql /etc/mysql /usr/local/mysql
 COPY --from=build /dist /usr/local/mysql
-RUN groupadd -r mysql && useradd -r -g mysql mysql
 COPY config/ /etc/mysql/
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN ln -s usr/local/bin/docker-entrypoint.sh /entrypoint.sh 
