@@ -12,13 +12,13 @@ RUN wget https://github.com/thkukuk/rpcsvc-proto/releases/download/v1.4/rpcsvc-p
     make install && cd ..
 RUN wget https://dev.mysql.com/get/Downloads/MySQL-8.4/mysql-8.4.0.tar.gz && \
     tar -xzf mysql-8.4.0.tar.gz && \
-    cd mysql-8.4.0 && mkdir build && cd build && mkdir -p /dist
+    cd mysql-8.4.0 && mkdir build && cd build && mkdir -p /dist /var/run/mysqld /var/lib/mysql
 RUN cmake .. \
     -DWITH_BOOST=../extra/boost/boost_1_84_0/boost \
     -DCMAKE_INSTALL_PREFIX=/dist \
     -DMYSQL_UNIX_ADDR=/var/run/mysqld/mysql.sock \
     -DMYSQLX_UNIX_ADDR=/var/run/mysqld/mysqlx.sock \
-    -DSYSCONFDIR=/etc \
+    -DSYSCONFDIR=/etc/mysql \
     -DSYSTEMD_PID_DIR=/var/run/mysqld \
     -DMYSQL_DATADIR=/var/lib/mysql \
     -DDEFAULT_CHARSET=utf8  \
