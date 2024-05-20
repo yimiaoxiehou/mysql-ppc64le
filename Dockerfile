@@ -31,6 +31,7 @@ RUN cmake .. \
 RUN make -j `grep processor /proc/cpuinfo | wc -l` && make install
 
 FROM almalinux:8
+RUN dnf -y update
 RUN groupadd -r mysql && useradd -r -g mysql mysql
 RUN mkdir -p /var/run/mysqld /etc/mysql /var/lib/mysql /usr/local/mysql && \
     chown -R mysql:mysql /var/lib/mysql /var/run/mysqld /etc/mysql /usr/local/mysql && \ 
