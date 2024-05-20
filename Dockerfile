@@ -9,11 +9,11 @@ RUN wget https://github.com/thkukuk/rpcsvc-proto/releases/download/v1.4/rpcsvc-p
     cd rpcsvc-proto-1.4/ && \
     ./configure && \
     make && \
-    make install && cd ..
-RUN wget https://dev.mysql.com/get/Downloads/MySQL-8.4/mysql-8.4.0.tar.gz && \
+    make install && cd .. && \
+    wget https://dev.mysql.com/get/Downloads/MySQL-8.4/mysql-8.4.0.tar.gz && \
     tar -xzf mysql-8.4.0.tar.gz && \
-    cd mysql-8.4.0 && mkdir build && cd build && mkdir -p /dist /var/run/mysqld /var/lib/mysql
-RUN cmake .. \
+    cd mysql-8.4.0 && mkdir build && cd build && mkdir -p /dist /var/run/mysqld /var/lib/mysql && \
+    cmake .. \
     -DWITH_BOOST=../extra/boost/boost_1_84_0/boost \
     -DCMAKE_INSTALL_PREFIX=/dist \
     -DMYSQL_UNIX_ADDR=/var/run/mysqld/mysql.sock \
@@ -27,8 +27,8 @@ RUN cmake .. \
     -DWITH_ARCHIVE_STORAGE_ENGINE=1 \
     -DWITH_BLACKHOLE_STORAGE_ENGINE=1 \
     -DWITH_PERFSCHEMA_STORAGE_ENGINE=1 \
-    -DFORCE_INSOURCE_BUILD=1 
-RUN make -j `grep processor /proc/cpuinfo | wc -l` && make install
+    -DFORCE_INSOURCE_BUILD=1 && \
+    make -j `grep processor /proc/cpuinfo | wc -l` && make install
 
 FROM almalinux:8
 RUN dnf -y update
