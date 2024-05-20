@@ -32,7 +32,7 @@ RUN wget https://github.com/thkukuk/rpcsvc-proto/releases/download/v1.4/rpcsvc-p
 
 FROM alpine:3.19
 RUN apk add wget
-RUN groupadd -r mysql && useradd -r -g mysql mysql
+RUN addgroup -S mysql && adduser -S mysql -G mysql
 RUN mkdir -p /var/run/mysqld /etc/mysql /var/lib/mysql /usr/local/mysql && \
     chown -R mysql:mysql /var/lib/mysql /var/run/mysqld /etc/mysql /usr/local/mysql && \ 
     chmod 1777 /var/run/mysqld /var/lib/mysql /etc/mysql /usr/local/mysql && \
