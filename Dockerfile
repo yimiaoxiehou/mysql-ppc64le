@@ -39,8 +39,8 @@ RUN mkdir -p /var/run/mysqld /etc/mysql /var/lib/mysql /usr/local/mysql && \
 COPY --from=build /dist /usr/local/mysql
 COPY config/ /etc/mysql/
 COPY docker-entrypoint.sh /usr/local/bin/
-RUN ln -s usr/local/bin/docker-entrypoint.sh /entrypoint.sh 
-ENV PATH="/usr/local/mysql:${PATH}"
+RUN ln -s /usr/local/bin/docker-entrypoint.sh /entrypoint.sh 
+ENV PATH="/usr/local/mysql:/usr/local/bin:${PATH}"
 ENTRYPOINT ["docker-entrypoint.sh"]
 
 EXPOSE 3306 33060
