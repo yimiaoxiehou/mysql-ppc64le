@@ -30,16 +30,22 @@ RUN wget https://github.com/thkukuk/rpcsvc-proto/releases/download/v1.4/rpcsvc-p
     -DFORCE_INSOURCE_BUILD=1 && \
     make -j `grep processor /proc/cpuinfo | wc -l` && make install
 
-FROM almalinux:8
-RUN dnf -y update
+FROM alpine:3.19
+RUN apk add wget
 RUN groupadd -r mysql && useradd -r -g mysql mysql
 RUN mkdir -p /var/run/mysqld /etc/mysql /var/lib/mysql /usr/local/mysql && \
     chown -R mysql:mysql /var/lib/mysql /var/run/mysqld /etc/mysql /usr/local/mysql && \ 
-    chmod 1777 /var/run/mysqld /var/lib/mysql /etc/mysql /usr/local/mysql
+    chmod 1777 /var/run/mysqld /var/lib/mysql /etc/mysql /usr/local/mysql && \
+    mkdir /docker-entrypoint-initdb.d
 COPY --from=build /dist /usr/local/mysql
 COPY config/ /etc/mysql/
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN ln -s /usr/local/bin/docker-entrypoint.sh /entrypoint.sh 
+RUN wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/1.17/gosu-ppc64el" && \
+    chmod +x /usr/local/bin/gosu && \
+    gosu --version && \
+    gosu nobody true && \
+    chmod +x /usr/local/bin/docker-entrypoint.sh
 ENV PATH="/usr/local/mysql/bin:/usr/local/bin:${PATH}"
 ENTRYPOINT ["docker-entrypoint.sh"]
 
