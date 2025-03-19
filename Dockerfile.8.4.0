@@ -4,8 +4,8 @@ RUN dnf -y update && dnf -y groupinstall "Development Tools" && \
     gcc-toolset-12-gcc gcc-toolset-12-gcc-c++ gcc-toolset-12-binutils \
     gcc-toolset-12-annobin-annocheck gcc-toolset-12-annobin-plugin-gcc
 WORKDIR /mysql
-RUN wget https://github.com/thkukuk/rpcsvc-proto/releases/download/v1.4/rpcsvc-proto-1.4.tar.gz && \
-    tar -xvzf rpcsvc-proto-1.4.tar.gz && \
+COPY ./rpcsvc-proto-1.4.tar.gz:/mysql/rpcsvc-proto-1.4.tar.gz
+RUN tar -xvzf rpcsvc-proto-1.4.tar.gz && \
     cd rpcsvc-proto-1.4/ && \
     ./configure && \
     make && \
@@ -14,24 +14,36 @@ RUN wget https://github.com/thkukuk/rpcsvc-proto/releases/download/v1.4/rpcsvc-p
     tar -xzf mysql-8.4.0.tar.gz && \
     cd mysql-8.4.0 && mkdir build && cd build && mkdir -p /dist /var/run/mysqld /var/lib/mysql && \
     cmake .. \
-    -DWITH_BOOST=../extra/boost/boost_1_84_0/boost \
+    -DWITH_BOOST=../boost/boost_1_73_0/ \
     -DCMAKE_INSTALL_PREFIX=/dist \
-    -DMYSQL_UNIX_ADDR=/var/run/mysqld/mysql.sock \
-    -DMYSQLX_UNIX_ADDR=/var/run/mysqld/mysqlx.sock \
-    -DSYSCONFDIR=/etc/mysql \
-    -DSYSTEMD_PID_DIR=/var/run/mysqld \
-    -DMYSQL_DATADIR=/var/lib/mysql \
     -DDEFAULT_CHARSET=utf8  \
     -DDEFAULT_COLLATION=utf8_general_ci \
-    -DWITH_INNOBASE_STORAGE_ENGINE=1 \
-    -DWITH_ARCHIVE_STORAGE_ENGINE=1 \
-    -DWITH_BLACKHOLE_STORAGE_ENGINE=1 \
-    -DWITH_PERFSCHEMA_STORAGE_ENGINE=1 \
-    -DFORCE_INSOURCE_BUILD=1 && \
-    make -j `grep processor /proc/cpuinfo | wc -l` && make install
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_CONFIG=mysql_release \
+    -DFEATURE_SET=community \
+    -DWITHOUT_SERVER=OFF \
+    -DWITHOUT_CLIENT=OFF \
+    -DWITHOUT_TEST_UTILS=ON \
+    -DWITHOUT_PERFSCHEMA=ON \
+    -DWITHOUT_EXAMPLES=ON \
+    -DWITHOUT_MAN_PAGES=ON \
+    -DWITHOUT_DOC=ON \
+    -DWITHOUT_MYSQLTEST=ON \
+    -DWITHOUT_V8=ON \
+    -DWITHOUT_AUTHENTICATION_KERBEROS=ON \
+    -DWITHOUT_AUTHENTICATION_LDAP=ON \
+    -DWITHOUT_AUTHENTICATION_PAM=ON \
+    -DWITHOUT_CURL=ON \
+    -DWITHOUT_ICU=ON \
+    -DWITHOUT_LIBEVENT=ON \
+    -DWITHOUT_LIBXML=ON \
+    -DWITHOUT_LZ4=ON \
+    -DWITHOUT_ZLIB=ON \
+    -DWITHOUT_ZSTD=ON && \
+    make -j `grep processor /proc/cpuinfo | wc -l` && make install && \
+    rm -rf mysql-test LICENSE* README* docs bin/*test
 
 FROM almalinux:8
-RUN dnf -y update && dnf -y install wget
 RUN groupadd -r mysql && useradd -r -g mysql mysql
 RUN mkdir -p /var/run/mysqld /etc/mysql /var/lib/mysql /usr/local/mysql && \
     chown -R mysql:mysql /var/lib/mysql /var/run/mysqld /etc/mysql /usr/local/mysql && \ 
@@ -40,9 +52,9 @@ RUN mkdir -p /var/run/mysqld /etc/mysql /var/lib/mysql /usr/local/mysql && \
 COPY --from=build /dist /usr/local/mysql
 COPY config/ /etc/mysql/
 COPY docker-entrypoint.sh /usr/local/bin/
-RUN ln -s /usr/local/bin/docker-entrypoint.sh /entrypoint.sh 
-RUN wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/1.17/gosu-ppc64el" && \
-    chmod +x /usr/local/bin/gosu && \
+RUN ln -s /usr/local/bin/docker-entrypoint.sh /entrypoint.sh
+COPY ./gosu-ppc64el /usr/local/bin/gosu
+RUN chmod +x /usr/local/bin/gosu && \
     gosu --version && \
     gosu nobody true && \
     chmod +x /usr/local/bin/docker-entrypoint.sh

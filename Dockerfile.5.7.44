@@ -1,0 +1,65 @@
+FROM almalinux:8 as build
+RUN dnf -y update && dnf -y groupinstall "Development Tools" && \ 
+    dnf -y install wget cmake openssl-devel  ncurses-devel libtirpc-devel  \
+    gcc-toolset-12-gcc gcc-toolset-12-gcc-c++ gcc-toolset-12-binutils \
+    gcc-toolset-12-annobin-annocheck gcc-toolset-12-annobin-plugin-gcc
+WORKDIR /mysql
+COPY ./rpcsvc-proto-1.4.tar.gz:/mysql/rpcsvc-proto-1.4.tar.gz
+RUN tar -xvzf rpcsvc-proto-1.4.tar.gz && \
+    cd rpcsvc-proto-1.4/ && \
+    ./configure && \
+    make && \
+    make install && cd .. && \
+    wget https://cdn.mysql.com/archives/mysql-5.7/mysql-boost-5.7.44.tar.gz  && \
+    tar -xzf mysql-boost-5.7.44.tar.gz && \
+    cd mysql-5.7.44 && mkdir build && cd build && mkdir -p /dist /var/run/mysqld /var/lib/mysql && \
+    cmake .. \
+    -DWITH_BOOST=../boost/boost_1_59_0/ \
+    -DCMAKE_INSTALL_PREFIX=/dist \
+    -DDEFAULT_CHARSET=utf8  \
+    -DDEFAULT_COLLATION=utf8_general_ci \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_CONFIG=mysql_release \
+    -DFEATURE_SET=community \
+    -DWITHOUT_SERVER=OFF \
+    -DWITHOUT_CLIENT=OFF \
+    -DWITHOUT_TEST_UTILS=ON \
+    -DWITHOUT_PERFSCHEMA=ON \
+    -DWITHOUT_EXAMPLES=ON \
+    -DWITHOUT_MAN_PAGES=ON \
+    -DWITHOUT_DOC=ON \
+    -DWITHOUT_MYSQLTEST=ON \
+    -DWITHOUT_V8=ON \
+    -DWITHOUT_AUTHENTICATION_KERBEROS=ON \
+    -DWITHOUT_AUTHENTICATION_LDAP=ON \
+    -DWITHOUT_AUTHENTICATION_PAM=ON \
+    -DWITHOUT_CURL=ON \
+    -DWITHOUT_ICU=ON \
+    -DWITHOUT_LIBEVENT=ON \
+    -DWITHOUT_LIBXML=ON \
+    -DWITHOUT_LZ4=ON \
+    -DWITHOUT_ZLIB=ON \
+    -DWITHOUT_ZSTD=ON && \
+    make -j `grep processor /proc/cpuinfo | wc -l` && make install && \
+    rm -rf mysql-test LICENSE* README* docs bin/*test
+
+FROM almalinux:8
+RUN groupadd -r mysql && useradd -r -g mysql mysql
+RUN mkdir -p /var/run/mysqld /etc/mysql /var/lib/mysql /usr/local/mysql && \
+    chown -R mysql:mysql /var/lib/mysql /var/run/mysqld /etc/mysql /usr/local/mysql && \ 
+    chmod 1777 /var/run/mysqld /var/lib/mysql /etc/mysql /usr/local/mysql && \
+    mkdir /docker-entrypoint-initdb.d
+COPY --from=build /dist /usr/local/mysql
+COPY config/ /etc/mysql/
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN ln -s /usr/local/bin/docker-entrypoint.sh /entrypoint.sh
+COPY ./gosu-ppc64el /usr/local/bin/gosu
+RUN chmod +x /usr/local/bin/gosu && \
+    gosu --version && \
+    gosu nobody true && \
+    chmod +x /usr/local/bin/docker-entrypoint.sh
+ENV PATH="/usr/local/mysql/bin:/usr/local/bin:${PATH}"
+ENTRYPOINT ["docker-entrypoint.sh"]
+
+EXPOSE 3306 33060
+CMD ["mysqld"]
